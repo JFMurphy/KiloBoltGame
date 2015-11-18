@@ -8,17 +8,20 @@ import java.awt.Image;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.net.URL;
+import java.util.ArrayList;
 
 public class StartingClass extends Applet implements Runnable, KeyListener {
 
 	private static Background bg1, bg2;
 	private Robot robot;
-	private Image image, currentSprite, character, characterDown, characterJumped, background;
+	private Heliboy hb, hb2;
+	private Image image, currentSprite, character, characterDown, characterJumped, heliboy, background;
 	private URL base;
 	private Graphics second;
 
 	@Override
 	public void init() {
+		// Window Setup
 		setSize(800, 480);
 		setBackground(Color.BLACK);
 		setFocusable(true);
@@ -38,13 +41,18 @@ public class StartingClass extends Applet implements Runnable, KeyListener {
 		characterDown = getImage(base, "data/down.png");
 		characterJumped = getImage(base, "data/jumped.png");
 		currentSprite = character;
+		heliboy = getImage(base, "data/heliboy.png");
 		background = getImage(base, "data/background.png");
 	}
 
 	@Override
 	public void start() {
+		
+		// Object creation
 		bg1 = new Background(0, 0);
 		bg2 = new Background(2160, 0);
+		hb = new Heliboy(340, 360);
+		hb2 = new Heliboy(700, 360);
 		robot = new Robot();
 		
 		Thread thread = new Thread(this);
@@ -65,6 +73,7 @@ public class StartingClass extends Applet implements Runnable, KeyListener {
 
 	@Override
 	public void run() {
+		// Game loop
 		while (true) {
 			
 			robot.update();
@@ -75,11 +84,27 @@ public class StartingClass extends Applet implements Runnable, KeyListener {
 				currentSprite = character;
 			}
 			
+			ArrayList<Projectile> projectiles = robot.getProjectiles();
+			for (int i = 0; i < projectiles.size(); i++) {
+				Projectile p = projectiles.get(i);
+				if (p.isVisible()) {
+					p.update();
+				} else {
+					projectiles.remove(i);
+				}
+			}
+			
+			hb.update();
+			hb2.update();
 			bg1.update();
 			bg2.update();
 			
 			repaint();
-
+			
+			/* Creates a 17ms delay that makes the game run at 60fps.
+			 * 1000ms / 60fps = 17ms. We need to update the screen every
+			 * 17ms to get smooth gameplay.
+			 */
 			try {
 				Thread.sleep(17);
 			} catch (InterruptedException e) {
@@ -105,9 +130,20 @@ public class StartingClass extends Applet implements Runnable, KeyListener {
 	
 	@Override
 	public void paint(Graphics g) {
+		// Drawing images
 		g.drawImage(background, bg1.getBgX(), bg1.getBgY(), this);
 		g.drawImage(background, bg2.getBgX(), bg2.getBgY(), this);
+		
+		ArrayList<Projectile> projectiles = robot.getProjectiles();
+		for (int i = 0; i < projectiles.size(); i++) {
+			Projectile p = projectiles.get(i);
+			g.setColor(Color.YELLOW);
+			g.fillRect(p.getX(), p.getY(), 10, 5);
+		}
+		
 		g.drawImage(currentSprite, robot.getCenterX() - 61, robot.getCenterY() - 63, this);
+		g.drawImage(heliboy, hb.getCenterX() - 48, hb.getCenterY() - 48, this);
+		g.drawImage(heliboy, hb2.getCenterX() - 48, hb2.getCenterY() - 48, this);
 	}
 
 	@Override
@@ -145,6 +181,12 @@ public class StartingClass extends Applet implements Runnable, KeyListener {
 
 		case KeyEvent.VK_SPACE:
 			robot.jump();
+			break;
+			
+		case KeyEvent.VK_CONTROL:
+			if (robot.isDucked() == false && robot.isJumped() == false) {
+				robot.shoot();
+			}
 			break;
 		}
 
