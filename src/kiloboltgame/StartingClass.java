@@ -7,17 +7,28 @@ import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+
+import kiloboltgame.framework.Animation;
 
 public class StartingClass extends Applet implements Runnable, KeyListener {
 
 	private static Background bg1, bg2;
 	private Robot robot;
 	private Heliboy hb, hb2;
-	private Image image, currentSprite, character, characterDown, characterJumped, heliboy, background;
+	private Image image, currentSprite, character, character2, character3, characterDown, characterJumped, heliboy,
+			heliboy2, heliboy3, heliboy4, heliboy5, background;
+
+	public static Image tilegrassTop, tilegrassBot, tilegrassLeft, tilegrassRight, tiledirt;
 	private URL base;
 	private Graphics second;
+	private Animation anim, hanim;
+
+	private ArrayList<Tile> tilearray = new ArrayList<Tile>();
 
 	@Override
 	public void init() {
@@ -29,34 +40,123 @@ public class StartingClass extends Applet implements Runnable, KeyListener {
 		frame.setTitle("Q-Bot Alpha");
 
 		addKeyListener(this);
-		
+
 		try {
 			base = getDocumentBase();
 		} catch (Exception e) {
 			// TODO: handle exception
 		}
-		
+
 		// Image setups
 		character = getImage(base, "data/character.png");
+		character2 = getImage(base, "data/character2.png");
+		character3 = getImage(base, "data/character3.png");
+
 		characterDown = getImage(base, "data/down.png");
 		characterJumped = getImage(base, "data/jumped.png");
-		currentSprite = character;
+
 		heliboy = getImage(base, "data/heliboy.png");
+		heliboy2 = getImage(base, "data/heliboy2.png");
+		heliboy3 = getImage(base, "data/heliboy3.png");
+		heliboy4 = getImage(base, "data/heliboy4.png");
+		heliboy5 = getImage(base, "data/heliboy5.png");
+
 		background = getImage(base, "data/background.png");
+
+		tiledirt = getImage(base, "data/tiledirt.png");
+		tilegrassTop = getImage(base, "data/tilegrasstop.png");
+		tilegrassBot = getImage(base, "data/tilegrassbot.png");
+		tilegrassLeft = getImage(base, "data/tilegrassleft.png");
+		tilegrassRight = getImage(base, "data/tilegrassright.png");
+
+		anim = new Animation();
+		anim.addFrame(character, 1250);
+		anim.addFrame(character2, 50);
+		anim.addFrame(character3, 50);
+		anim.addFrame(character2, 50);
+
+		hanim = new Animation();
+		hanim.addFrame(heliboy, 100);
+		hanim.addFrame(heliboy2, 100);
+		hanim.addFrame(heliboy3, 100);
+		hanim.addFrame(heliboy4, 100);
+		hanim.addFrame(heliboy5, 100);
+		hanim.addFrame(heliboy4, 100);
+		hanim.addFrame(heliboy3, 100);
+		hanim.addFrame(heliboy2, 100);
+
+		currentSprite = anim.getImage();
 	}
 
 	@Override
 	public void start() {
-		
+
 		// Object creation
 		bg1 = new Background(0, 0);
 		bg2 = new Background(2160, 0);
+
+		// Initialise tiles
+		try {
+			loadMap("data/map1.txt");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		for (int i = 0; i < 200; i++) {
+			for (int j = 0; j < 12; j++) {
+				if (j == 11) {
+					Tile t = new Tile(i, j, 2);
+					tilearray.add(t);
+				}
+
+				if (j == 10) {
+					Tile t = new Tile(i, j, 1);
+					tilearray.add(t);
+				}
+			}
+		}
+
 		hb = new Heliboy(340, 360);
 		hb2 = new Heliboy(700, 360);
 		robot = new Robot();
-		
+
 		Thread thread = new Thread(this);
 		thread.start();
+	}
+
+	private void loadMap(String filename) throws IOException {
+		ArrayList<String> lines = new ArrayList<String>();
+		int width = 0;
+		int height = 0;
+
+		BufferedReader reader = new BufferedReader(new FileReader(filename));
+		while (true) {
+			String line = reader.readLine();
+			// no more lines to read
+			if (line == null) {
+				reader.close();
+				break;
+			}
+
+			if (!line.startsWith("!")) {
+				lines.add(line);
+				width = Math.max(width, line.length());
+			}
+		}
+		height = lines.size();
+		
+		for (int j = 0; j < 12; j++) {
+			String line = lines.get(j);
+			for (int i = 0; i < width; i++) {
+				System.out.println(i + "is i ");
+				
+				if (i < line.length()) {
+					char ch = line.charAt(i);
+					Tile t = new Tile(i, j, Character.getNumericValue(ch));
+					tilearray.add(t);
+				}
+			}
+		}
+
 	}
 
 	@Override
@@ -75,15 +175,16 @@ public class StartingClass extends Applet implements Runnable, KeyListener {
 	public void run() {
 		// Game loop
 		while (true) {
-			
+
 			robot.update();
-			
+
 			if (robot.isJumped()) {
 				currentSprite = characterJumped;
 			} else if (robot.isJumped() == false && robot.isDucked() == false) {
-				currentSprite = character;
+				currentSprite = anim.getImage();
 			}
-			
+
+			// Bullets
 			ArrayList<Projectile> projectiles = robot.getProjectiles();
 			for (int i = 0; i < projectiles.size(); i++) {
 				Projectile p = projectiles.get(i);
@@ -93,17 +194,21 @@ public class StartingClass extends Applet implements Runnable, KeyListener {
 					projectiles.remove(i);
 				}
 			}
-			
+
+			// Update objects
+			updateTiles();
 			hb.update();
 			hb2.update();
 			bg1.update();
 			bg2.update();
-			
+
+			animate();
 			repaint();
-			
-			/* Creates a 17ms delay that makes the game run at 60fps.
-			 * 1000ms / 60fps = 17ms. We need to update the screen every
-			 * 17ms to get smooth gameplay.
+
+			/*
+			 * Creates a 17ms delay that makes the game run at 60fps. 1000ms /
+			 * 60fps = 17ms. We need to update the screen every 17ms to get
+			 * smooth gameplay.
 			 */
 			try {
 				Thread.sleep(17);
@@ -112,38 +217,58 @@ public class StartingClass extends Applet implements Runnable, KeyListener {
 			}
 		}
 	}
-	
+
+	public void animate() {
+		anim.update(10);
+		hanim.update(50);
+	}
+
 	@Override
 	public void update(Graphics g) {
 		if (image == null) {
 			image = createImage(this.getWidth(), this.getHeight());
 			second = image.getGraphics();
 		}
-		
+
 		second.setColor(getBackground());
 		second.fillRect(0, 0, getWidth(), getHeight());
 		second.setColor(getForeground());
 		paint(second);
-		
+
 		g.drawImage(image, 0, 0, this);
 	}
-	
+
 	@Override
 	public void paint(Graphics g) {
 		// Drawing images
 		g.drawImage(background, bg1.getBgX(), bg1.getBgY(), this);
 		g.drawImage(background, bg2.getBgX(), bg2.getBgY(), this);
-		
+		paintTiles(g);
+
 		ArrayList<Projectile> projectiles = robot.getProjectiles();
 		for (int i = 0; i < projectiles.size(); i++) {
 			Projectile p = projectiles.get(i);
 			g.setColor(Color.YELLOW);
 			g.fillRect(p.getX(), p.getY(), 10, 5);
 		}
-		
+
 		g.drawImage(currentSprite, robot.getCenterX() - 61, robot.getCenterY() - 63, this);
-		g.drawImage(heliboy, hb.getCenterX() - 48, hb.getCenterY() - 48, this);
-		g.drawImage(heliboy, hb2.getCenterX() - 48, hb2.getCenterY() - 48, this);
+		g.drawImage(hanim.getImage(), hb.getCenterX() - 48, hb.getCenterY() - 48, this);
+		g.drawImage(hanim.getImage(), hb2.getCenterX() - 48, hb2.getCenterY() - 48, this);
+	}
+
+	private void updateTiles() {
+		for (int i = 0; i < tilearray.size(); i++) {
+			Tile t = (Tile) tilearray.get(i);
+			t.update();
+		}
+	}
+
+	private void paintTiles(Graphics g) {
+		for (int i = 0; i < tilearray.size(); i++) {
+			Tile t = (Tile) tilearray.get(i);
+			g.drawImage(t.getTileImage(), t.getTileX(), t.getTileY(), this);
+		}
 	}
 
 	@Override
@@ -182,7 +307,7 @@ public class StartingClass extends Applet implements Runnable, KeyListener {
 		case KeyEvent.VK_SPACE:
 			robot.jump();
 			break;
-			
+
 		case KeyEvent.VK_CONTROL:
 			if (robot.isDucked() == false && robot.isJumped() == false) {
 				robot.shoot();
@@ -202,7 +327,7 @@ public class StartingClass extends Applet implements Runnable, KeyListener {
 			break;
 
 		case KeyEvent.VK_DOWN:
-			currentSprite = character;
+			currentSprite = anim.getImage();
 			robot.setDucked(false);
 			break;
 
