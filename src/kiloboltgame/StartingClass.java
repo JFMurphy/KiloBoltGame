@@ -2,6 +2,7 @@ package kiloboltgame;
 
 import java.applet.Applet;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Image;
@@ -18,8 +19,10 @@ import kiloboltgame.framework.Animation;
 public class StartingClass extends Applet implements Runnable, KeyListener {
 
 	private static Background bg1, bg2;
-	private Robot robot;
-	private Heliboy hb, hb2;
+	private static Robot robot;
+	public static Heliboy hb, hb2;
+	public static int score = 0;
+	private Font font = new Font(null, Font.BOLD, 30);
 	private Image image, currentSprite, character, character2, character3, characterDown, characterJumped, heliboy,
 			heliboy2, heliboy3, heliboy4, heliboy5, background;
 
@@ -94,6 +97,7 @@ public class StartingClass extends Applet implements Runnable, KeyListener {
 		// Object creation
 		bg1 = new Background(0, 0);
 		bg2 = new Background(2160, 0);
+		robot = new Robot();
 
 		// Initialise tiles
 		try {
@@ -101,23 +105,9 @@ public class StartingClass extends Applet implements Runnable, KeyListener {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		for (int i = 0; i < 200; i++) {
-			for (int j = 0; j < 12; j++) {
-				if (j == 11) {
-					Tile t = new Tile(i, j, 2);
-					tilearray.add(t);
-				}
-
-				if (j == 10) {
-					Tile t = new Tile(i, j, 1);
-					tilearray.add(t);
-				}
-			}
-		}
 
 		hb = new Heliboy(340, 360);
 		hb2 = new Heliboy(700, 360);
-		robot = new Robot();
 
 		Thread thread = new Thread(this);
 		thread.start();
@@ -143,12 +133,12 @@ public class StartingClass extends Applet implements Runnable, KeyListener {
 			}
 		}
 		height = lines.size();
-		
+
 		for (int j = 0; j < 12; j++) {
 			String line = lines.get(j);
 			for (int i = 0; i < width; i++) {
 				System.out.println(i + "is i ");
-				
+
 				if (i < line.length()) {
 					char ch = line.charAt(i);
 					Tile t = new Tile(i, j, Character.getNumericValue(ch));
@@ -255,6 +245,10 @@ public class StartingClass extends Applet implements Runnable, KeyListener {
 		g.drawImage(currentSprite, robot.getCenterX() - 61, robot.getCenterY() - 63, this);
 		g.drawImage(hanim.getImage(), hb.getCenterX() - 48, hb.getCenterY() - 48, this);
 		g.drawImage(hanim.getImage(), hb2.getCenterX() - 48, hb2.getCenterY() - 48, this);
+		
+		g.setFont(font);
+		g.setColor(Color.WHITE);
+		g.drawString(Integer.toString(score), 740, 30);
 	}
 
 	private void updateTiles() {
@@ -311,6 +305,7 @@ public class StartingClass extends Applet implements Runnable, KeyListener {
 		case KeyEvent.VK_CONTROL:
 			if (robot.isDucked() == false && robot.isJumped() == false) {
 				robot.shoot();
+				robot.setReadyToFire(false);
 			}
 			break;
 		}
@@ -341,6 +336,10 @@ public class StartingClass extends Applet implements Runnable, KeyListener {
 
 		case KeyEvent.VK_SPACE:
 			break;
+
+		case KeyEvent.VK_CONTROL:
+			robot.setReadyToFire(true);
+			break;
 		}
 
 	}
@@ -351,6 +350,10 @@ public class StartingClass extends Applet implements Runnable, KeyListener {
 
 	public static Background getBg2() {
 		return bg2;
+	}
+
+	public static Robot getRobot() {
+		return robot;
 	}
 
 }
