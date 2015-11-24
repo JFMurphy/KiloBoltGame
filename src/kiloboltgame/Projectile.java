@@ -25,18 +25,18 @@ public class Projectile {
 			visible = false;
 			r = null;
 		}
-		if (x < 801) {
+		if (x < 800) {
 			checkCollision();
 		}
 	}
-	
-	private void checkCollision(){
+
+	private void checkCollision() {
 		if (r.intersects(StartingClass.hb.r)) {
 			visible = false;
 			StartingClass.score += 1;
 		}
-		
-		if (r.intersects(StartingClass.hb2.r)){
+
+		if (r.intersects(StartingClass.hb2.r)) {
 			visible = false;
 			StartingClass.score += 1;
 		}

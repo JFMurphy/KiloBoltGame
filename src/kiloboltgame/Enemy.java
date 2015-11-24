@@ -6,7 +6,7 @@ public class Enemy {
 	private int maxHealth, currentHealth, power, speedX, centerX, centerY;
 	private Background bg = StartingClass.getBg1();
 
-	private Rectangle r = new Rectangle(0, 0, 0, 0);
+	Rectangle r = new Rectangle(0, 0, 0, 0);
 
 	// Behavioral Methods
 	public void update() {

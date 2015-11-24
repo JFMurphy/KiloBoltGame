@@ -18,15 +18,23 @@ import kiloboltgame.framework.Animation;
 
 public class StartingClass extends Applet implements Runnable, KeyListener {
 
+	enum GameState {
+		Running, Dead
+	}
+
+	GameState state = GameState.Running;
+
 	private static Background bg1, bg2;
 	private static Robot robot;
 	public static Heliboy hb, hb2;
 	public static int score = 0;
 	private Font font = new Font(null, Font.BOLD, 30);
+
 	private Image image, currentSprite, character, character2, character3, characterDown, characterJumped, heliboy,
 			heliboy2, heliboy3, heliboy4, heliboy5, background;
 
 	public static Image tilegrassTop, tilegrassBot, tilegrassLeft, tilegrassRight, tiledirt;
+
 	private URL base;
 	private Graphics second;
 	private Animation anim, hanim;
@@ -163,49 +171,58 @@ public class StartingClass extends Applet implements Runnable, KeyListener {
 
 	@Override
 	public void run() {
-		// Game loop
-		while (true) {
 
-			robot.update();
+		if (state == GameState.Running) {
 
-			if (robot.isJumped()) {
-				currentSprite = characterJumped;
-			} else if (robot.isJumped() == false && robot.isDucked() == false) {
-				currentSprite = anim.getImage();
-			}
+			// Game loop
+			while (true) {
 
-			// Bullets
-			ArrayList<Projectile> projectiles = robot.getProjectiles();
-			for (int i = 0; i < projectiles.size(); i++) {
-				Projectile p = projectiles.get(i);
-				if (p.isVisible()) {
-					p.update();
-				} else {
-					projectiles.remove(i);
+				robot.update();
+
+				if (robot.isJumped()) {
+					currentSprite = characterJumped;
+				} else if (robot.isJumped() == false && robot.isDucked() == false) {
+					currentSprite = anim.getImage();
+				}
+
+				// Bullets
+				ArrayList<Projectile> projectiles = robot.getProjectiles();
+				for (int i = 0; i < projectiles.size(); i++) {
+					Projectile p = projectiles.get(i);
+					if (p.isVisible()) {
+						p.update();
+					} else {
+						projectiles.remove(i);
+					}
+				}
+
+				// Update objects
+				updateTiles();
+				hb.update();
+				hb2.update();
+				bg1.update();
+				bg2.update();
+
+				animate();
+				repaint();
+
+				/*
+				 * Creates a 17ms delay that makes the game run at 60fps. 1000ms
+				 * / 60fps = 17ms. We need to update the screen every 17ms to
+				 * get smooth gameplay.
+				 */
+				try {
+					Thread.sleep(17);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+
+				if (robot.getCenterY() > 500) {
+					state = GameState.Dead;
 				}
 			}
-
-			// Update objects
-			updateTiles();
-			hb.update();
-			hb2.update();
-			bg1.update();
-			bg2.update();
-
-			animate();
-			repaint();
-
-			/*
-			 * Creates a 17ms delay that makes the game run at 60fps. 1000ms /
-			 * 60fps = 17ms. We need to update the screen every 17ms to get
-			 * smooth gameplay.
-			 */
-			try {
-				Thread.sleep(17);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
 		}
+
 	}
 
 	public void animate() {
@@ -230,25 +247,34 @@ public class StartingClass extends Applet implements Runnable, KeyListener {
 
 	@Override
 	public void paint(Graphics g) {
-		// Drawing images
-		g.drawImage(background, bg1.getBgX(), bg1.getBgY(), this);
-		g.drawImage(background, bg2.getBgX(), bg2.getBgY(), this);
-		paintTiles(g);
-
-		ArrayList<Projectile> projectiles = robot.getProjectiles();
-		for (int i = 0; i < projectiles.size(); i++) {
-			Projectile p = projectiles.get(i);
-			g.setColor(Color.YELLOW);
-			g.fillRect(p.getX(), p.getY(), 10, 5);
-		}
-
-		g.drawImage(currentSprite, robot.getCenterX() - 61, robot.getCenterY() - 63, this);
-		g.drawImage(hanim.getImage(), hb.getCenterX() - 48, hb.getCenterY() - 48, this);
-		g.drawImage(hanim.getImage(), hb2.getCenterX() - 48, hb2.getCenterY() - 48, this);
 		
-		g.setFont(font);
-		g.setColor(Color.WHITE);
-		g.drawString(Integer.toString(score), 740, 30);
+		if (state == GameState.Running){
+			// Drawing images
+			g.drawImage(background, bg1.getBgX(), bg1.getBgY(), this);
+			g.drawImage(background, bg2.getBgX(), bg2.getBgY(), this);
+			paintTiles(g);
+
+			ArrayList<Projectile> projectiles = robot.getProjectiles();
+			for (int i = 0; i < projectiles.size(); i++) {
+				Projectile p = projectiles.get(i);
+				g.setColor(Color.YELLOW);
+				g.fillRect(p.getX(), p.getY(), 10, 5);
+			}
+
+			g.drawImage(currentSprite, robot.getCenterX() - 61, robot.getCenterY() - 63, this);
+			g.drawImage(hanim.getImage(), hb.getCenterX() - 48, hb.getCenterY() - 48, this);
+			g.drawImage(hanim.getImage(), hb2.getCenterX() - 48, hb2.getCenterY() - 48, this);
+
+			g.setFont(font);
+			g.setColor(Color.WHITE);
+			g.drawString(Integer.toString(score), 740, 30);
+		} else if (state == GameState.Dead) {
+			g.setColor(Color.BLACK);
+			g.fillRect(0, 0, 800, 480);
+			g.setColor(Color.WHITE);
+			g.drawString("Dead", 360, 240);
+		}
+		
 	}
 
 	private void updateTiles() {
