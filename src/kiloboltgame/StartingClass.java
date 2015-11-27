@@ -247,8 +247,8 @@ public class StartingClass extends Applet implements Runnable, KeyListener {
 
 	@Override
 	public void paint(Graphics g) {
-		
-		if (state == GameState.Running){
+
+		if (state == GameState.Running) {
 			// Drawing images
 			g.drawImage(background, bg1.getBgX(), bg1.getBgY(), this);
 			g.drawImage(background, bg2.getBgX(), bg2.getBgY(), this);
@@ -274,7 +274,7 @@ public class StartingClass extends Applet implements Runnable, KeyListener {
 			g.setColor(Color.WHITE);
 			g.drawString("Dead", 360, 240);
 		}
-		
+
 	}
 
 	private void updateTiles() {
@@ -334,6 +334,13 @@ public class StartingClass extends Applet implements Runnable, KeyListener {
 				robot.setReadyToFire(false);
 			}
 			break;
+
+		case KeyEvent.VK_R:
+			if (state == GameState.Dead) {
+				state = GameState.Running;
+				stop();
+				start();
+			}
 		}
 
 	}
